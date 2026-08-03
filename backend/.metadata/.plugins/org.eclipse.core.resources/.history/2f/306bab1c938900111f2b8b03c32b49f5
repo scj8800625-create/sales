@@ -1,0 +1,287 @@
+package com.example.demo.post.post.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.example.demo.member.member.entity.UserInfo;
+import com.example.demo.member.member.repository.UserRepository;
+import com.example.demo.post.post.entity.BuyList;
+import com.example.demo.post.post.entity.Company;
+import com.example.demo.post.post.entity.CompanyInfo;
+import com.example.demo.post.post.entity.Product;
+import com.example.demo.post.post.entity.ProductInfo;
+import com.example.demo.post.post.entity.SalesList;
+import com.example.demo.post.post.entity.Trade;
+import com.example.demo.post.post.repository.BuyListRepository;
+import com.example.demo.post.post.repository.CompanyInfoRepository;
+import com.example.demo.post.post.repository.CompanyRepository;
+import com.example.demo.post.post.repository.ProductInfoRepository;
+import com.example.demo.post.post.repository.ProductRepository;
+import com.example.demo.post.post.repository.SalesListRepository;
+import com.example.demo.post.post.repository.TradeRepository;
+
+import lombok.AllArgsConstructor;
+
+@AllArgsConstructor
+@Service
+public class PostService {
+	private final CompanyInfoRepository companyInfoRepository;
+	private final ProductInfoRepository productInfoRepository;
+	private final CompanyRepository companyrepository;
+	private final ProductRepository productrepository;
+	private final TradeRepository traderepository;
+	private final BuyListRepository buylistrepository;
+	private final SalesListRepository saleslistrepository;
+	private final UserRepository userinforepository;
+	
+	public CompanyInfo save(CompanyInfo companyInfo) {
+		// TODO Auto-generated method stub
+		return companyInfoRepository.save(companyInfo);
+	}
+
+	public ProductInfo save(ProductInfo productInfo) {
+		// TODO Auto-generated method stub
+		return productInfoRepository.save(productInfo);
+	}
+
+	public ProductInfo findByProductNumber(String productNumber) {
+		// TODO Auto-generated method stub
+		return productInfoRepository.findByProductNumber(productNumber);
+	}
+
+	public CompanyInfo findByCompanyNumber(String companyNumber) {
+		// TODO Auto-generated method stub
+		return companyInfoRepository.findByCompanyNumber(companyNumber);
+	}
+
+	public List<ProductInfo> findAll() {
+		// TODO Auto-generated method stub
+		return productInfoRepository.findAll();
+	}
+
+	public void delete(Long id) {
+		// TODO Auto-generated method stub
+		productInfoRepository.deleteAllById(id);
+	}
+
+	public void deleteCompany(Long id) {
+		// TODO Auto-generated method stub
+		companyInfoRepository.deleteAllById(id);
+	}
+
+	public List<CompanyInfo> findAllCompany() {
+		// TODO Auto-generated method stub
+		return companyInfoRepository.findAll();
+	}
+
+	public CompanyInfo findByCompanyName(String companyName) {
+		// TODO Auto-generated method stub
+		return companyInfoRepository.findByCompanyName(companyName);
+	}
+	
+	public Company save(Company company) {
+		// TODO Auto-generated method stub
+		return companyrepository.save(company);
+	}
+
+	public ProductInfo findByProductName(String productName) {
+		// TODO Auto-generated method stub
+		return productInfoRepository.findByProductName(productName);
+	}
+
+
+	public Product findByCompanyName(Company company) {
+		// TODO Auto-generated method stub
+		List<Product> product = productrepository.findByCompany(company);
+		if(product.isEmpty()) {
+			return null;
+		}
+		return product.get(0);
+	}
+
+	public Trade findByProduct(Product product) {
+		// TODO Auto-generated method stub
+		List<Trade>trade = traderepository.findByProduct(product);
+		if(trade.isEmpty()) {
+			return null;
+		}
+		return trade.get(0);
+	}
+
+	public Trade save(Trade trade) {
+		// TODO Auto-generated method stub
+		return traderepository.save(trade);
+	}
+
+	public Product save(Product product) {
+		// TODO Auto-generated method stub
+		return productrepository.save(product);
+	}
+
+	public BuyList save(BuyList buylist) {
+		// TODO Auto-generated method stub
+		return buylistrepository.save(buylist);
+	}
+
+	public SalesList save(SalesList saleslist) {
+		// TODO Auto-generated method stub
+		return saleslistrepository.save(saleslist);
+	}
+
+	public Company findByCompanyInfo(CompanyInfo companyInfo) {
+		// TODO Auto-generated method stub
+		List<Company> company = companyrepository.findByCompanyInfo(companyInfo);
+		if(company.isEmpty()) {
+			return null;
+		}
+		return company.get(0);
+	}
+
+	public List<SalesList> findAllSales() {
+		// TODO Auto-generated method stub
+		return saleslistrepository.findAll();
+	}
+
+	public List<BuyList> findAllBuys() {
+		// TODO Auto-generated method stub
+		return buylistrepository.findAll();
+	}
+
+	public BuyList findBybuyid(Long id) {
+		// TODO Auto-generated method stub
+		return buylistrepository.findAllById(id);
+	}
+
+	public SalesList findBysalesid(Long id) {
+		// TODO Auto-generated method stub
+		return saleslistrepository.findAllById(id);
+	}
+
+	public void deleteBybuylist(BuyList buylist) {
+		// TODO Auto-generated method stub
+		buylistrepository.delete(buylist);
+	}
+
+	public void deleteBysaleslist(SalesList saleslist) {
+		// TODO Auto-generated method stub
+		saleslistrepository.delete(saleslist);
+	}
+
+	public Product findByProductInfo(ProductInfo productInfo) {
+		// TODO Auto-generated method stub
+		List<Product>product = productrepository.findByProductInfo(productInfo);
+		if(product.isEmpty()) {
+			return null;
+		}
+		 return product.get(0);
+	}
+
+	public Product findByProductInfoAndCompany(ProductInfo productInfo, Company company) {
+		// TODO Auto-generated method stub
+		return productrepository.findByProductInfoAndCompany(productInfo, company)
+		        .orElse(null);
+	}
+
+	public BuyList findByTrade(Trade trade) {
+		// TODO Auto-generated method stub
+		List<BuyList> buylist =buylistrepository.findByTrade(trade);
+		if(buylist.isEmpty()) {
+			return null;
+		}
+		return buylist.get(0);
+	}
+
+	public SalesList findBysalesTrade(Trade trade) {
+		// TODO Auto-generated method stub
+		List<SalesList> saleslist= saleslistrepository.findByTrade(trade);
+		if(saleslist.isEmpty()) {
+			return null;
+		}
+		return saleslist.get(0);
+	}
+
+	public UserInfo findUserInfo(Long id) {
+		// TODO Auto-generated method stub
+		return userinforepository.findAllById(id);
+	}
+
+	public ProductInfo findByProductID(Long id) {
+		// TODO Auto-generated method stub
+		return productInfoRepository.findAllById(id);
+	}
+
+	public CompanyInfo findByCompanyInfoID(Long id) {
+		// TODO Auto-generated method stub
+		return companyInfoRepository.findAllById(id);
+	}
+
+	public Company findByCompanyId(Long id) {
+		// TODO Auto-generated method stub
+		return companyrepository.findAllById(id);
+	}
+
+	public Product findByProductIDToproduct(Long id, Company company) {
+		// TODO Auto-generated method stub
+		return productrepository.findByIdAndCompany(id, company);
+	}
+
+	public Trade findByTradeID(Long id) {
+		// TODO Auto-generated method stub
+		return traderepository.findAllById(id);
+	}
+
+	public Trade findByTradeIDAndProduct(Long id, Product product) {
+		// TODO Auto-generated method stub
+		return traderepository.findByIdAndProduct(id, product);
+	}
+
+	public BuyList findBybuyidandtrade(Long id, Trade trade) {
+		// TODO Auto-generated method stub
+		return buylistrepository.findByIdAndTrade(id, trade);
+	}
+
+	public SalesList findBysalesidandtrade(Long id, Trade trade) {
+		// TODO Auto-generated method stub
+		return saleslistrepository.findByIdAndTrade(id, trade);
+	}
+
+	public Company findByCompanyIdandCompanyInfo(Long id, CompanyInfo companyInfo) {
+		// TODO Auto-generated method stub
+		return companyrepository.findByIdAndCompanyInfo(id, companyInfo);
+	}
+
+	public Product findByProductIDToproductandproductinfo(Long id, Company company, ProductInfo productInfo) {
+		// TODO Auto-generated method stub
+		return productrepository.findByIdAndCompanyAndProductInfo(id, company, productInfo);
+	}
+
+	public Product findByProductIDToproduct(Long id) {
+		// TODO Auto-generated method stub
+		return productrepository.findAllById(id);
+	}
+
+	public BuyList findByTradeAndId(Trade trade, Long id) {
+		// TODO Auto-generated method stub
+		return buylistrepository.findByTradeAndId(trade, id);
+	}
+
+	public SalesList findBysalesTradeandid(Trade trade, Long id) {
+		// TODO Auto-generated method stub
+		return saleslistrepository.findByTradeAndId(trade, id);
+	}
+
+	public Company findByUserInfoAndCompanyInfo(UserInfo userInfo, CompanyInfo comInfo) {
+		// TODO Auto-generated method stub
+		return companyrepository.findByUserInfoAndCompanyInfo(userInfo, comInfo);
+	}
+
+	public Product findByProductInfoAndCompanyName(ProductInfo productInFo, Company company) {
+		// TODO Auto-generated method stub
+		List<Product>product = productrepository.findByProductInfoAndCompany(productInFo, company);
+		return 
+	}
+
+
+
+}

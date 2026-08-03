@@ -1,0 +1,44 @@
+package com.example.demo.post.post.service;
+
+import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class S3Service {
+
+    private final S3Client s3Client;
+
+    private final String bucketName =
+            "sales-733652932213-ap-southeast-2-an";
+
+
+    public String upload(MultipartFile file)
+            throws IOException {
+
+        String fileName =
+                "images/" +
+                UUID.randomUUID() +
+                "-" +
+                file.getOriginalFilename();
+
+
+        PutObjectRequest request =
+                PutObjectRequest.builder()
+                        .bucket(bucketName)
+                        .key(fileName)
+                        .contentType(file.getContentType())
+                        .build();
+
+
+        s3Client.putObject(
+                request,
+                RequestBody.fromBytes(file.getBytes())
+        );
+
+
+        return fileName;
+    }
+	
+}

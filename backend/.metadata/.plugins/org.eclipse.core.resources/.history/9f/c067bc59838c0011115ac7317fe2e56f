@@ -1,0 +1,48 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://sales.cxsaoio86hvo.ap-southeast-2.rds.amazonaws.com:3306/sales
+    username: admin
+    password: admin123
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+      show-sql: true
+
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+
+  session:
+    store-type: redis
+    timeout: 30m
+
+cloud:
+  aws:
+    credentials:
+      access-key: "AKIA2VUI7KZ27RZLS3LS"
+      secret-key: "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"
+    region:
+      static: ap-southeast-2
+    s3:
+      bucket: sales-733652932213-ap-southeast-2-an	
+
+kakao:
+  oauth:
+    client-id: "d84d6e9a3a5dd2815c93d5be163b0e72"
+    client-secret: "2ORq2UgAiFoGLQQQ1MGNCaUUocJkTleh"
+    redirect-uri: "http://localhost:8080/oauth/kakao/callback"
+image:
+  base-url: "https://sales-733652932213-ap-southeast-2-an.s3.ap-southeast-2.amazonaws.com/"

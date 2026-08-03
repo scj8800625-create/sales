@@ -1,0 +1,56 @@
+package com.example.demo.post.post.entity;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@AllArgsConstructor
+@Getter
+@Entity
+@NoArgsConstructor
+@Setter
+public class SalesList {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	private String contentType;
+
+	private LocalDateTime salesDate;
+	private Long salesQualtity;
+	private String contents;
+	private LocalDateTime createAT;
+	private LocalDateTime motifyAT;
+	private Long sales_price;
+
+	@ManyToOne
+	private Trade trade;
+
+	public SalesList(String contentType, Long salesQualtity, Trade trade, LocalDateTime salesDate, Long sales_price) {
+		this.contentType = contentType;
+		this.salesDate = salesDate.withNano(0);
+		this.createAT = LocalDateTime.now();
+		this.motifyAT = LocalDateTime.now();
+		this.salesQualtity = salesQualtity;
+		this.trade = trade;
+		this.sales_price = sales_price;
+	}
+
+	public SalesList(String contentType, LocalDateTime salesDate, Long salesQualtity, LocalDateTime createAT,
+			LocalDateTime motifyAT, Trade trade, Long sales_price) {
+		this.contentType = contentType;
+		this.salesDate = salesDate;
+		this.salesQualtity = salesQualtity;
+		this.createAT = createAT;
+		this.motifyAT = motifyAT;
+		this.trade = trade;
+		this.sales_price = sales_price;
+	}
+}

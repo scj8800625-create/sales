@@ -1,0 +1,32 @@
+package com.example.demo.post.post.repository;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.example.demo.post.post.entity.Company;
+import com.example.demo.post.post.entity.CompanyInfo;
+import com.example.demo.post.post.entity.Product;
+import com.example.demo.post.post.entity.ProductInfo;
+
+public interface ProductRepository extends JpaRepository<Product, Long>  {
+
+
+		List<Product> findByCompany(Company company);
+
+		List<Product> findByProductInfo(ProductInfo productInfo);
+
+		Product findByProductInfoAndCompany(ProductInfo productInfo, Company company);
+
+		Product findAllById(Long id);
+
+		Product findByIdAndCompany(Long id, Company company);
+
+		Product findByIdAndCompanyAndProductInfo(Long id, Company company, ProductInfo productInfo);
+
+		List<Product> findAllByCompany(Company company);
+
+		List<Product> findAllByProductInfo(ProductInfo productInfo);
+
+}

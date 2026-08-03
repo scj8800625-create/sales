@@ -1,0 +1,45 @@
+package com.example.demo.post.post.entity;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@NoArgsConstructor
+@Getter
+@Entity
+@AllArgsConstructor
+@Setter
+public class Trade {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+
+	@ManyToOne
+	private Product product;
+
+	@OneToMany(mappedBy = "trade", cascade = CascadeType.ALL)
+	private List<TotalList> totallist = new ArrayList();
+
+	@OneToMany(mappedBy = "trade", cascade = CascadeType.ALL)
+	private List<SalesList> saleslist = new ArrayList();
+
+	@OneToMany(mappedBy = "trade", cascade = CascadeType.ALL)
+	private List<BuyList> buylist = new ArrayList();
+
+	public Trade(Product product) {
+		this.product = product;
+	}
+
+}

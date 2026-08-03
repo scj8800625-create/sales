@@ -1,0 +1,25 @@
+package com.example.demo.member.member.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+public class signUpResDTO {
+	String status;
+	String nickname;
+	Long kakaoId;
+
+	public signUpResDTO(String status) {
+		this.status = status;
+	}
+
+	public signUpResDTO(String nickname, Long kakaoId) {
+		this.nickname = nickname;
+		this.kakaoId = kakaoId;
+	}
+}

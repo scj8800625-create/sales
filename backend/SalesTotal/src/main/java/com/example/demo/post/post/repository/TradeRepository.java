@@ -1,0 +1,22 @@
+package com.example.demo.post.post.repository;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.example.demo.post.post.entity.Product;
+import com.example.demo.post.post.entity.Trade;
+
+@Repository
+public interface TradeRepository extends JpaRepository<Trade, Long> {
+
+	List<Trade> findByProduct(Product product);
+
+	Trade findAllById(Long id);
+
+	Trade findByIdAndProduct(Long id, Product product);
+
+	List<Trade> findAllByProduct(Product product);
+
+}

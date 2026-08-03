@@ -1,0 +1,701 @@
+package com.example.demo.post.post.controller;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+import org.springframework.core.env.Environment;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.example.demo.member.member.entity.Auth;
+import com.example.demo.member.member.entity.UserInfo;
+import com.example.demo.member.member.service.MemberService;
+import com.example.demo.post.post.dto.ComInInDTO;
+import com.example.demo.post.post.dto.ComInResDTO;
+import com.example.demo.post.post.dto.ComMoInDTO;
+import com.example.demo.post.post.dto.ComMoResDTO;
+import com.example.demo.post.post.dto.CompanyInfoDTO;
+import com.example.demo.post.post.dto.CompanyViewDTO;
+import com.example.demo.post.post.dto.CondelDTO;
+import com.example.demo.post.post.dto.DeleteCompanyDTO;
+import com.example.demo.post.post.dto.DeleteProductDTO;
+import com.example.demo.post.post.dto.InsertListDTO;
+import com.example.demo.post.post.dto.ListDto;
+import com.example.demo.post.post.dto.ProInInDTO;
+import com.example.demo.post.post.dto.ProInResDTO;
+import com.example.demo.post.post.dto.ProMoInDTO;
+import com.example.demo.post.post.dto.ProMoResDTO;
+import com.example.demo.post.post.dto.ProductInfoDTO;
+import com.example.demo.post.post.dto.ProductViewDto;
+import com.example.demo.post.post.dto.TotalDTO;
+import com.example.demo.post.post.dto.UpdateListDTO;
+import com.example.demo.post.post.entity.BuyList;
+import com.example.demo.post.post.entity.Company;
+import com.example.demo.post.post.entity.CompanyInfo;
+import com.example.demo.post.post.entity.Product;
+import com.example.demo.post.post.entity.ProductInfo;
+import com.example.demo.post.post.entity.SalesList;
+import com.example.demo.post.post.entity.Trade;
+import com.example.demo.post.post.service.PostService;
+import com.example.demo.post.post.service.S3Service;
+
+import jakarta.servlet.http.HttpSession;
+import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
+
+@RestController
+@AllArgsConstructor
+public class PostController {
+	private final PostService postService;
+	private final MemberService memberService;
+	private final S3Service s3Service;
+	private final Environment env;
+
+	@Transactional
+	@PostMapping("/insert/company")
+	ComInResDTO InsertCompany(@RequestBody ComInInDTO In, HttpSession session) {
+		if (session.getAttribute("kakaoId") == null) {
+			return new ComInResDTO("NLI");
+		}
+		if (!"adm".equals(session.getAttribute("mode"))) {
+			return new ComInResDTO("NAI");
+		}
+		CompanyInfo companyInfo = null;
+
+		companyInfo = new CompanyInfo(In.getName(), In.getCompanyNumber());
+		if (companyInfo == null) {
+			return new ComInResDTO("NCI");
+		}
+		try {
+			companyInfo = postService.save(companyInfo);
+		} catch (Exception e) {
+			return new ComInResDTO("NSI");
+		}
+		return new ComInResDTO("ok", companyInfo.getId(), companyInfo.getCompanyName(), companyInfo.getCompanyNumber(),
+				companyInfo.getCreateAT());
+	}
+
+	@Transactional
+	@PostMapping(value = "/insert/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	ProInResDTO InsertProduct(@RequestPart("data") ProInInDTO In, @RequestPart("file") MultipartFile file,
+			HttpSession session) throws IOException {
+		if (session.getAttribute("kakaoId") == null) {
+			return new ProInResDTO("NLI");
+		}
+		if (!"adm".equals(session.getAttribute("mode"))) {
+			return new ProInResDTO("NAI");
+		}
+
+		String imageName = env.getProperty("image.base-url");
+		if (!file.isEmpty()) {
+			imageName += s3Service.upload(file);
+			System.out.println(imageName);
+		} else {
+			imageName = "";
+			System.out.println(imageName);
+		}
+
+		ProductInfo productInfo = null;
+
+		productInfo = new ProductInfo(In.getProductNumber(), In.getName(), In.getStock(), In.getPrice(), imageName);
+		if (productInfo == null) {
+			return new ProInResDTO("NPI");
+		}
+		try {
+			productInfo = postService.save(productInfo);
+		} catch (Exception e) {
+			return new ProInResDTO("NPS");
+		}
+
+		return new ProInResDTO("ok", productInfo.getId(), productInfo.getProductNumber(), productInfo.getProductName(),
+				productInfo.getStock(), productInfo.getProductPrice(), productInfo.getImage(),
+				productInfo.getCreateAT());
+	}
+
+	@Transactional
+	@PutMapping(value = "/motify/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	ProMoResDTO UpdateProduct(@RequestPart("data") ProMoInDTO In, @RequestPart("file") MultipartFile file,
+			HttpSession session) throws IOException {
+		if (session.getAttribute("kakaoId") == null) {
+			return new ProMoResDTO("NLI");
+		}
+		if (!"adm".equals(session.getAttribute("mode"))) {
+			return new ProMoResDTO("NAI");
+		}
+		String imageName = env.getProperty("image.base-url");
+		if (!file.isEmpty()) {
+			imageName += s3Service.upload(file);
+		} else {
+			imageName = "";
+		}
+
+		ProductInfo productInfo = postService.findByProductID(In.getId());
+		if (productInfo == null) {
+			return new ProMoResDTO("NPI");
+		}
+		productInfo.setProductNumber(In.getProductNumber());
+		productInfo.setImage(In.getImage());
+		productInfo.setProductName(In.getName());
+		productInfo.setProductPrice(In.getPrice());
+
+		productInfo.setStock(In.getStock());
+		productInfo.setCreateAT(LocalDateTime.now());
+
+		return new ProMoResDTO("ok", productInfo.getId(), productInfo.getProductNumber(), productInfo.getProductName(),
+				productInfo.getStock(), productInfo.getProductPrice(), imageName, productInfo.getCreateAT());
+	}
+
+	@Transactional
+	@PutMapping("/motify/company")
+	ComMoResDTO MotifyCompany(@RequestBody ComMoInDTO In, HttpSession session) {
+		if (session.getAttribute("kakaoId") == null) {
+			return new ComMoResDTO("NLI");
+		}
+		if (!"adm".equals(session.getAttribute("mode"))) {
+			return new ComMoResDTO("NAI");
+		}
+		CompanyInfo companyInfo = postService.findByCompanyInfoID(In.getId());
+		if (companyInfo == null) {
+			return new ComMoResDTO("NCI");
+		}
+		companyInfo.setCompanyName(In.getName());
+		companyInfo.setCompanyNumber(In.getCompanyNumber());
+
+		companyInfo.setCreateAT(LocalDateTime.now());
+
+		return new ComMoResDTO("ok", companyInfo.getId(), companyInfo.getCompanyName(), companyInfo.getCompanyNumber(),
+				companyInfo.getCreateAT());
+	}
+
+	@Transactional
+	@DeleteMapping("/delete/product")
+	ProductInfoDTO DeleteProduct(@RequestBody DeleteProductDTO In, HttpSession session) {
+		if (session.getAttribute("kakaoId") == null) {
+			return new ProductInfoDTO("NLI");
+		}
+		if (!"adm".equals(session.getAttribute("mode"))) {
+			return new ProductInfoDTO("NAI");
+		}
+
+		ProductInfo productInfo = postService.findByProductID(In.getId());
+		List<Product> product = new ArrayList();
+		if (productInfo != null) {
+			product = postService.findByProductInfos(productInfo);
+		}
+		List<Trade> trade = new ArrayList();
+		for (int i = 0; i < product.size(); i++) {
+			trade.addAll(postService.findByproducts(product.get(i)));
+		}
+		List<SalesList> sales = new ArrayList();
+		for (int i = 0; i < trade.size(); i++) {
+			sales.addAll(postService.findByTrades(trade.get(i)));
+		}
+		List<BuyList> buys = new ArrayList();
+		for (int i = 0; i < trade.size(); i++) {
+			buys.addAll(postService.findBybuyTrades(trade.get(i)));
+		}
+
+		for (int i = 0; i < buys.size(); i++) {
+			postService.deleteBybuylist(buys.get(i));
+		}
+		for (int i = 0; i < sales.size(); i++) {
+			postService.deleteBysaleslist(sales.get(i));
+		}
+		for (int i = 0; i < trade.size(); i++) {
+			postService.deleteBytrade(trade.get(i));
+		}
+		for (int i = 0; i < product.size(); i++) {
+			postService.deleteByProduct(product.get(i));
+		}
+		if (productInfo != null) {
+			postService.deleteByProductInfo(productInfo);
+		}
+		return new ProductInfoDTO("ok");
+	}
+
+	@Transactional
+	@DeleteMapping("/delete/content")
+	CompanyInfoDTO DeleteContent(@RequestBody CondelDTO In, HttpSession session) {
+		if (session.getAttribute("kakaoId") == null) {
+			return new CompanyInfoDTO("NLI");
+		}
+		if (!"adm".equals(session.getAttribute("mode"))) {
+			return new CompanyInfoDTO("NAI");
+		}
+		if (In.getFlow().equals("in")) {
+			BuyList buylist = null;
+			buylist = postService.findBybuyid(In.getId());
+			if (buylist != null) {
+				postService.deleteBybuylist(buylist);
+			} else {
+				throw new RuntimeException("구매정보가 없습니다.");
+			}
+		} else {
+			SalesList saleslist = null;
+			saleslist = postService.findBysalesid(In.getId());
+			if (saleslist != null) {
+				postService.deleteBysaleslist(saleslist);
+			} else {
+				throw new RuntimeException("판매정보가 없습니다.");
+			}
+		}
+
+		return new CompanyInfoDTO("ok");
+	}
+
+	@Transactional
+	@DeleteMapping("/delete/company")
+	CompanyInfoDTO DeleteCompany(@RequestBody DeleteCompanyDTO In, HttpSession session) {
+
+		if (session.getAttribute("kakaoId") == null) {
+			throw new RuntimeException("로그인이 되지 않았습니다.");
+		}
+		if (!"adm".equals(session.getAttribute("mode"))) {
+			throw new RuntimeException("운영자 id가 아닙니다.");
+		}
+		CompanyInfo companyInfo = postService.findByCompanyInfoID(In.getId());
+		List<Company> company = postService.findByCompanyInfos(companyInfo);
+		List<Product> product = new ArrayList();
+		for (int i = 0; i < company.size(); i++) {
+			product.addAll(postService.findByCompanyList(company.get(i)));
+		}
+		List<Trade> trade = new ArrayList();
+		for (int i = 0; i < product.size(); i++) {
+			trade.addAll(postService.findByproducts(product.get(i)));
+		}
+		List<SalesList> sales = new ArrayList();
+		for (int i = 0; i < trade.size(); i++) {
+			sales.addAll(postService.findByTrades(trade.get(i)));
+		}
+		List<BuyList> buys = new ArrayList();
+		for (int i = 0; i < trade.size(); i++) {
+			buys.addAll(postService.findBybuyTrades(trade.get(i)));
+		}
+
+		for (int i = 0; i < buys.size(); i++) {
+			postService.deleteBybuylist(buys.get(i));
+		}
+		for (int i = 0; i < sales.size(); i++) {
+			postService.deleteBysaleslist(sales.get(i));
+		}
+		for (int i = 0; i < trade.size(); i++) {
+			postService.deleteBytrade(trade.get(i));
+		}
+		for (int i = 0; i < product.size(); i++) {
+			postService.deleteByProduct(product.get(i));
+		}
+		for (int i = 0; i < company.size(); i++) {
+			postService.deleteByCompany(company.get(i));
+		}
+		if (companyInfo != null) {
+			postService.deleteCompanyInfo(companyInfo);
+		}
+		return new CompanyInfoDTO("ok");
+	}
+
+	@Transactional
+	@PostMapping("/view/product")
+	List<ProductViewDto> ViewProduct(HttpSession session) {
+		List<ProductInfo> productInfo = null;
+		List<ProductViewDto> productViewInfo = new ArrayList<>();
+
+		productInfo = postService.findAll();
+		if (productInfo.isEmpty()) {
+			throw new RuntimeException("제품정보가 없습니다.");
+		}
+
+		for (int i = 0; i < productInfo.size(); i++) {
+			productViewInfo.add(new ProductViewDto(productInfo.get(i).getId(), productInfo.get(i).getProductNumber(),
+					productInfo.get(i).getProductName(), productInfo.get(i).getStock(),
+					productInfo.get(i).getProductPrice(), productInfo.get(i).getImage(),
+					productInfo.get(i).getCreateAT()));
+
+		}
+
+		return productViewInfo;
+	}
+
+	@Transactional
+	@PostMapping("/view/company")
+	List<CompanyViewDTO> ViewCompany(HttpSession session) {
+		List<CompanyInfo> companyInfo = null;
+		List<CompanyViewDTO> companyViewInfo = new ArrayList<>();
+
+		companyInfo = postService.findAllCompany();
+		if (companyInfo.isEmpty()) {
+			throw new RuntimeException("회사정보가 없습니다.");
+		}
+
+		for (int i = 0; i < companyInfo.size(); i++) {
+			companyViewInfo.add(new CompanyViewDTO(companyInfo.get(i).getId(), companyInfo.get(i).getCompanyNumber(),
+					companyInfo.get(i).getCompanyName(), companyInfo.get(i).getCreateAT()));
+		}
+
+		return companyViewInfo;
+	}
+
+	@Transactional
+	@PostMapping("/view/transaction")
+	List<TotalDTO> ViewTransaction(HttpSession session) {
+
+		List<SalesList> sales = null;
+		List<BuyList> buys = null;
+		List<TotalDTO> totalDTO = new ArrayList<>();
+
+		sales = postService.findAllSales();
+
+		buys = postService.findAllBuys();
+
+		for (int i = 0; i < sales.size(); i++) {
+			totalDTO.add(new TotalDTO(sales.get(i).getId(), sales.get(i).getTrade().getProduct().getCompany().getId(),
+					sales.get(i).getTrade().getProduct().getProductInfo().getId(),
+					sales.get(i).getTrade().getProduct().getId(), sales.get(i).getTrade().getId(), sales.get(i).getId(),
+					sales.get(i).getSalesDate(), sales.get(i).getContentType(),
+					sales.get(i).getTrade().getProduct().getCompany().getCompanyInfo().getCompanyName(),
+					sales.get(i).getTrade().getProduct().getProductInfo().getProductName(),
+					sales.get(i).getTrade().getProduct().getCompany().getUserInfo().getAuth().getNickname(),
+					sales.get(i).getSalesQualtity(), sales.get(i).getSales_price(),
+					sales.get(i).getTrade().getProduct().getProductInfo().getImage()));
+		}
+		if (sales.size() != 0) {
+			for (int i = 0; i < buys.size(); i++) {
+				totalDTO.add(new TotalDTO(buys.get(i).getId(), buys.get(i).getTrade().getProduct().getCompany().getId(),
+						buys.get(i).getTrade().getProduct().getProductInfo().getId(),
+						buys.get(i).getTrade().getProduct().getId(), buys.get(i).getTrade().getId(),
+						buys.get(i).getId() + sales.get(sales.size() - 1).getId(), buys.get(i).getBuyDate(),
+						buys.get(i).getContentType(),
+						buys.get(i).getTrade().getProduct().getCompany().getCompanyInfo().getCompanyName(),
+						buys.get(i).getTrade().getProduct().getProductInfo().getProductName(),
+						buys.get(i).getTrade().getProduct().getCompany().getUserInfo().getAuth().getNickname(),
+						buys.get(i).getBuyQualtity(), buys.get(i).getBuy_price(),
+						buys.get(i).getTrade().getProduct().getProductInfo().getImage()));
+			}
+		} else {
+			for (int i = 0; i < buys.size(); i++) {
+				totalDTO.add(new TotalDTO(buys.get(i).getId(), buys.get(i).getTrade().getProduct().getCompany().getId(),
+						buys.get(i).getTrade().getProduct().getProductInfo().getId(),
+						buys.get(i).getTrade().getProduct().getId(), buys.get(i).getTrade().getId(),
+						buys.get(i).getId(), buys.get(i).getBuyDate(), buys.get(i).getContentType(),
+						buys.get(i).getTrade().getProduct().getCompany().getCompanyInfo().getCompanyName(),
+						buys.get(i).getTrade().getProduct().getProductInfo().getProductName(),
+						buys.get(i).getTrade().getProduct().getCompany().getUserInfo().getAuth().getNickname(),
+						buys.get(i).getBuyQualtity(), buys.get(i).getBuy_price(),
+						buys.get(i).getTrade().getProduct().getProductInfo().getImage()));
+			}
+		}
+		totalDTO.sort(Comparator.comparing(TotalDTO::getDate));
+		return totalDTO;
+	}
+
+	@Transactional
+	@PostMapping("/insert/ProductList")
+	ListDto ProductList(@RequestBody InsertListDTO In, HttpSession session) {
+		if (session.getAttribute("kakaoId") == null) {
+			throw new RuntimeException("로그인이 필요합니다.");
+		}
+		if (!"adm".equals(session.getAttribute("mode"))) {
+			throw new RuntimeException("운영자 id가 아닙니다.");
+		}
+		Long KakaoId = (Long) session.getAttribute("kakaoId");
+
+		CompanyInfo comInfo = postService.findByCompanyName(In.getCompany());
+
+		Auth auth = memberService.findById(KakaoId);
+		if (auth == null) {
+			throw new RuntimeException("회원정보가 없습니다.");
+		}
+		UserInfo userInfo = memberService.findByAuth(auth);
+		if (userInfo == null) {
+			throw new RuntimeException("회원정보가 없습니다.");
+		}
+		ProductInfo productInFo = postService.findByProductName(In.getProduct());
+		if (productInFo == null) {
+			throw new RuntimeException("제품정보가 없습니다.");
+		}
+		Company company = null;
+		try {
+
+			company = postService.findByUserInfoAndCompanyInfo(userInfo, comInfo);
+			if (company == null) {
+				company = new Company(userInfo, comInfo);
+				company = postService.save(company);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace(); // 또는 log.error(...)
+			throw e;
+
+		}
+		Product product = null;
+		try {
+			product = postService.findByProductInfoAndCompanyName(productInFo, company);
+			if (product == null) {
+				product = new Product(productInFo, company);
+				postService.save(product);
+			}
+		} catch (Exception e) {
+
+			throw new RuntimeException("제품정보가 없습니다.");
+		}
+
+		Trade trade = null;
+		try {
+			trade = postService.findByProduct(product);
+			if (trade == null) {
+				trade = new Trade(product);
+				trade = postService.save(trade);
+				product.getTrade().add(trade);
+
+			}
+
+		} catch (Exception e) {
+			throw new RuntimeException("거래정보가 없습니다.");
+		}
+
+		SalesList saleslist = null;
+		BuyList buylist = null;
+		if (In.getFlow().equals("in")) {
+			buylist = new BuyList(In.getFlow(), In.getQuantity(), trade, In.getDate(), In.getPrice());
+			buylist = postService.save(buylist);
+			// trade.getBuylist().add(buylist);
+		} else {
+			saleslist = new SalesList(In.getFlow(), In.getQuantity(), trade, In.getDate(), In.getPrice());
+			saleslist = postService.save(saleslist);
+			// trade.getSaleslist().add(saleslist);
+		}
+
+		if (In.getFlow().equals("in")) {
+			return new ListDto(buylist.getId(), buylist.getTrade().getProduct().getCompany().getCompanyInfo().getId(),
+					buylist.getTrade().getProduct().getCompany().getId(),
+					buylist.getTrade().getProduct().getProductInfo().getId(), buylist.getTrade().getProduct().getId(),
+					buylist.getTrade().getId(), buylist.getBuyDate(), buylist.getContentType(),
+					company.getCompanyInfo().getCompanyName(), productInFo.getProductName(), auth.getNickname(),
+					buylist.getBuyQualtity(), buylist.getBuy_price(), productInFo.getImage());
+		} else {
+			return new ListDto(saleslist.getId(),
+					saleslist.getTrade().getProduct().getCompany().getCompanyInfo().getId(),
+					saleslist.getTrade().getProduct().getCompany().getId(),
+					saleslist.getTrade().getProduct().getProductInfo().getId(),
+					saleslist.getTrade().getProduct().getId(), saleslist.getTrade().getId(), saleslist.getSalesDate(),
+					saleslist.getContentType(), company.getCompanyInfo().getCompanyName(), productInFo.getProductName(),
+					auth.getNickname(), saleslist.getSalesQualtity(), saleslist.getSales_price(),
+					productInFo.getImage());
+		}
+
+	}
+
+	@Transactional
+	@PostMapping("/update/ProductList")
+	ListDto updateProductList(@RequestBody UpdateListDTO In, HttpSession session) {
+		if (session.getAttribute("kakaoId") == null) {
+			throw new RuntimeException("로그인이 필요합니다.");
+		}
+		if (!"adm".equals(session.getAttribute("mode"))) {
+			throw new RuntimeException("운영자 id가 아닙니다.");
+		}
+		Long KakaoId = (Long) session.getAttribute("kakaoId");
+
+		System.out.println(In.getId());
+		CompanyInfo companyInfo = null;
+
+		companyInfo = postService.findByCompanyName(In.getCompany());
+		if (companyInfo == null) {
+			throw new RuntimeException("회사정보가 없습니다.");
+		}
+
+		UserInfo userInfo = null;
+		try {
+			Auth auth = memberService.findById(KakaoId);
+			if (auth == null) {
+				throw new RuntimeException("유저정보가 없습니다.");
+			}
+			userInfo = memberService.findByAuth(auth);
+			if (userInfo == null) {
+				throw new RuntimeException("유저정보가 없습니다.");
+			}
+		} catch (Exception e) {
+			throw new RuntimeException("유저정보가 없습니다.");
+		}
+		if (userInfo == null) {
+			throw new RuntimeException("유저정보가 없습니다.");
+		}
+		Company company = null;
+		try {
+			company = postService.findByUserInfoAndCompanyInfo(userInfo, companyInfo);
+
+			if (company == null) {
+
+				company = new Company(userInfo, companyInfo);
+				postService.save(company);
+			}
+			System.out.println(company.getId() + "+" + In.getCompanyid());
+
+		} catch (Exception e) {
+			e.getStackTrace();
+			throw new RuntimeException("회사가 없습니다.");
+		}
+
+		ProductInfo productInfo = null;
+
+		productInfo = postService.findByProductName(In.getProduct());
+		if (productInfo == null) {
+			throw new RuntimeException("물품이가 없습니다.");
+		}
+
+		Product product = null;
+		try {
+			product = postService.findByProductInfoAndCompanyName(productInfo, company);
+			if (product == null) {
+
+				product = new Product(productInfo, company);
+				postService.save(product);
+
+			}
+			System.out.println("cc" + product.getProductInfo().getProductName());
+		} catch (Exception e) {
+			// e.printStackTrace();
+			// System.out.println("dd"+product);
+
+			throw new RuntimeException("제품이 없습니다.");
+		}
+
+		Trade trade = null;
+		try {
+			trade = postService.findByProduct(product);
+			if (trade == null) {
+				trade = new Trade(product);
+				trade = postService.save(trade);
+			}
+
+		} catch (Exception e) {
+			throw new RuntimeException("거래정보가 없습니다.");
+		}
+
+		System.out.println("dd" + trade.getProduct().getProductInfo().getProductName());
+		LocalDateTime dateTime = In.getDate();
+		BuyList buylist = null;
+		BuyList buylist2 = null;
+		SalesList saleslist = null;
+		SalesList saleslist2 = null;
+		if (In.getOriflow().equals("in")) {
+
+			buylist = postService.findBybuyid(In.getId());
+			if (In.getFlow().equals("in")) {
+				try {
+					buylist2 = postService.findBybuyidandtrade(In.getId(), trade);
+					if (buylist2 == null) {
+
+						buylist2 = new BuyList(In.getFlow(), dateTime, In.getQuantity(), LocalDateTime.now(),
+								LocalDateTime.now(), trade, In.getPrice());
+
+						buylist2 = postService.save(buylist2);
+						buylist2.getTrade().getBuylist().add(buylist2);
+						postService.deleteBybuylist(buylist);
+						System.out.println(">>>>" + trade.getId());
+
+					} else {
+						System.out.println(">>>>2" + buylist.getTrade().getId());
+						buylist.setBuyQualtity(In.getQuantity());
+						buylist.setContentType(In.getFlow());
+						buylist.setBuyDate(dateTime);
+						buylist.setBuy_price(In.getPrice());
+					}
+
+				} catch (Exception e) {
+					e.printStackTrace();
+					throw e;
+					// throw new RuntimeException("구매정보가 없습니다.");
+				}
+
+			} else {
+				saleslist = new SalesList(In.getFlow(), dateTime, In.getQuantity(), LocalDateTime.now(),
+						LocalDateTime.now(), trade, In.getPrice());
+				try {
+					saleslist = postService.save(saleslist);
+				} catch (Exception e) {
+					throw new RuntimeException("리스트를 등록할수 없습니다.");
+				}
+				saleslist.getTrade().getSaleslist().add(saleslist);
+				System.out.println(">>>>3" + saleslist.getTrade().getId());
+				System.out.println("ff" + saleslist.getTrade().getProduct().getProductInfo().getProductName());
+				postService.deleteBybuylist(buylist);
+
+			}
+
+		} else {
+
+			saleslist = postService.findBysalesid(In.getId());
+			if (In.getFlow().equals("in")) {
+				buylist = new BuyList(In.getFlow(), dateTime, In.getQuantity(), LocalDateTime.now(),
+						LocalDateTime.now(), trade, In.getPrice());
+				try {
+					buylist = postService.save(buylist);
+				} catch (Exception e) {
+					throw new RuntimeException("리스트를 등록할수 없습니다.");
+				}
+				buylist.getTrade().getBuylist().add(buylist);
+				System.out.println(">>>>4" + buylist.getTrade().getId());
+				postService.deleteBysaleslist(saleslist);
+			} else {
+				try {
+					saleslist2 = postService.findBysalesTradeandid(trade, In.getId());
+					if (saleslist2 == null) {
+
+						saleslist2 = new SalesList(In.getFlow(), dateTime, In.getQuantity(), LocalDateTime.now(),
+								LocalDateTime.now(), trade, In.getPrice());
+
+						saleslist2 = postService.save(saleslist2);
+						saleslist2.getTrade().getSaleslist().add(saleslist2);
+						postService.deleteBysaleslist(saleslist);
+						System.out.println(">>>>5" + saleslist.getTrade().getId());
+						//
+					} else {
+						saleslist.setSalesQualtity(In.getQuantity());
+						saleslist.setContentType(In.getFlow());
+						saleslist.setSales_price(In.getPrice());
+						saleslist.setSalesDate(dateTime);
+						System.out.println(">>>>6" + saleslist.getTrade().getId());
+					}
+				} catch (Exception e) {
+					throw new RuntimeException("판매정보가 없습니다.");
+				}
+
+			}
+		}
+
+		if (In.getFlow().equals("in")) {
+			return new ListDto(buylist.getId(), buylist.getTrade().getProduct().getCompany().getCompanyInfo().getId(),
+					buylist.getTrade().getProduct().getCompany().getId(),
+					buylist.getTrade().getProduct().getProductInfo().getId(), buylist.getTrade().getProduct().getId(),
+					buylist.getTrade().getId(), buylist.getBuyDate(), buylist.getContentType(),
+					buylist.getTrade().getProduct().getCompany().getCompanyInfo().getCompanyName(),
+					buylist.getTrade().getProduct().getProductInfo().getProductName(),
+					buylist.getTrade().getProduct().getCompany().getUserInfo().getAuth().getNickname(),
+					buylist.getBuyQualtity(), buylist.getBuy_price(),
+					buylist.getTrade().getProduct().getProductInfo().getImage());
+		} else {
+			return new ListDto(saleslist.getId(),
+					saleslist.getTrade().getProduct().getCompany().getCompanyInfo().getId(),
+					saleslist.getTrade().getProduct().getCompany().getId(),
+					saleslist.getTrade().getProduct().getProductInfo().getId(),
+					saleslist.getTrade().getProduct().getId(), saleslist.getTrade().getId(), saleslist.getSalesDate(),
+					saleslist.getContentType(),
+					saleslist.getTrade().getProduct().getCompany().getCompanyInfo().getCompanyName(),
+					saleslist.getTrade().getProduct().getProductInfo().getProductName(),
+					saleslist.getTrade().getProduct().getCompany().getUserInfo().getAuth().getNickname(),
+					saleslist.getSalesQualtity(), saleslist.getSales_price(),
+					saleslist.getTrade().getProduct().getProductInfo().getImage());
+		}
+
+	}
+}

@@ -1,0 +1,58 @@
+package com.example.demo.post.post.entity;
+
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@AllArgsConstructor
+@Getter
+@Entity
+@NoArgsConstructor
+@Setter
+public class BuyList {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	private String contentType;
+
+	private LocalDateTime buyDate;
+	private Long buyQualtity;
+	private String contents;
+	private LocalDateTime createAT;
+	private LocalDateTime motifyAT;
+	private Long buy_price;
+	
+	
+	
+	@ManyToOne
+	private Trade trade;
+
+	public BuyList(String contentType, Long buyQualtity, Trade trade, LocalDateTime buyDate, Long buy_price ) {
+		this.contentType = contentType;
+		this.buyDate = buyDate.withNano(0);;
+		this.createAT = LocalDateTime.now();
+		this.motifyAT = LocalDateTime.now();
+		this.buyQualtity = buyQualtity;
+		this.trade = trade;
+		this.buy_price = buy_price;
+	}
+
+	public BuyList(String contentType, LocalDateTime buyDate, Long buyQualtity, LocalDateTime createAT,
+			LocalDateTime motifyAT, Trade trade, Long buy_price ) {
+		this.contentType = contentType;
+		this.buyDate = buyDate;
+		this.buyQualtity = buyQualtity;
+		this.createAT = createAT;
+		this.motifyAT = motifyAT;
+		this.trade = trade;
+		this.buy_price = buy_price;
+	}
+}
